@@ -56,14 +56,29 @@ namespace ASPCoreApplication2023.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name")] Movie movie)
+        public IActionResult Create(Movie movie)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(movie);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (movie.ImageFile != null && movie.ImageFile.Length > 0)
+                {
+                    // Enregistrez le fichier image sur le serveur
+                    var imagePath = Path.Combine("wwwroot/images", movie.ImageFile.FileName);
+                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    {
+                        movie.ImageFile.CopyTo(stream);
+                    }
+
+                    // Enregistrez le chemin de l'image dans la base de données
+                    movie.Photo = $"/images/{movie.ImageFile.FileName}";
+                }
+
+                _context.Movies.Add(movie);
+                _context.SaveChanges();
+                return RedirectToAction("Index");
             }
+
+            // Gestion des erreurs de validation
             return View(movie);
         }
 
@@ -88,7 +103,7 @@ namespace ASPCoreApplication2023.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name")] Movie movie)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,DateAdded")] Movie movie)
         {
             if (id != movie.Id)
             {
@@ -97,6 +112,18 @@ namespace ASPCoreApplication2023.Controllers
 
             if (ModelState.IsValid)
             {
+                if (movie.ImageFile != null && movie.ImageFile.Length > 0)
+                {
+                    // Enregistrez le fichier image sur le serveur
+                    var imagePath = Path.Combine("wwwroot/images", movie.ImageFile.FileName);
+                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    {
+                        movie.ImageFile.CopyTo(stream);
+                    }
+
+                    // Enregistrez le chemin de l'image dans la base de données
+                    movie.Photo = $"/images/{movie.ImageFile.FileName}";
+                }
                 try
                 {
                     _context.Update(movie);
@@ -145,12 +172,23 @@ namespace ASPCoreApplication2023.Controllers
             {
                 return Problem("Entity set 'AppdbContext.Movies'  is null.");
             }
+
             var movie = await _context.Movies.FindAsync(id);
             if (movie != null)
             {
                 _context.Movies.Remove(movie);
             }
-            
+            // Delete the image file from the /images folder
+            if (!string.IsNullOrEmpty(movie.Photo))
+            {
+                var imagePath = Path.Combine("wwwroot", movie.Photo.TrimStart('/'));
+
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                }
+            }
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
