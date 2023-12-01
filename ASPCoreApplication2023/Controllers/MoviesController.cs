@@ -7,23 +7,29 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ASPCoreApplication2023.Data;
 using ASPCoreApplication2023.Models;
+using ASPCoreApplication2023.Services.ServiceContracts;
+using ASPCoreApplication2023.Services.Services;
 
 namespace ASPCoreApplication2023.Controllers
 {
     public class MoviesController : Controller
     {
         private readonly AppdbContext _context;
+        private readonly IMovieService _movieService;
 
-        public MoviesController(AppdbContext context)
+
+        public MoviesController(AppdbContext context,IMovieService movieService)
         {
             _context = context;
+            _movieService = movieService;
         }
 
         // GET: Movies
         public async Task<IActionResult> Index()
         {
-              return _context.Movies != null ? 
-                          View(await _context.Movies.ToListAsync()) :
+             var movies = _movieService.GetAllMovies();
+              return movies != null ? 
+                          View(movies) :
                           Problem("Entity set 'AppdbContext.Movies'  is null.");
         }
 
@@ -35,8 +41,8 @@ namespace ASPCoreApplication2023.Controllers
                 return NotFound();
             }
 
-            var movie = await _context.Movies
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var movie = _movieService.GetMovieById(id.Value);
+
             if (movie == null)
             {
                 return NotFound();
@@ -58,21 +64,7 @@ namespace ASPCoreApplication2023.Controllers
         {
             if (ModelState.IsValid)
             {
-                if (movie.ImageFile != null && movie.ImageFile.Length > 0)
-                {
-                    // Enregistrez le fichier image sur le serveur
-                    var imagePath = Path.Combine("wwwroot/images", movie.ImageFile.FileName);
-                    using (var stream = new FileStream(imagePath, FileMode.Create))
-                    {
-                        movie.ImageFile.CopyTo(stream);
-                    }
-
-                    // Enregistrez le chemin de l'image dans la base de données
-                    movie.Photo = $"/images/{movie.ImageFile.FileName}";
-                }
-
-                _context.Movies.Add(movie);
-                _context.SaveChanges();
+                _movieService.CreateMovie(movie);
                 return RedirectToAction("Index");
             }
 
@@ -81,14 +73,10 @@ namespace ASPCoreApplication2023.Controllers
         }
 
         // GET: Movies/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null || _context.Movies == null)
-            {
-                return NotFound();
-            }
+            var movie = _movieService.GetMovieById(id);
 
-            var movie = await _context.Movies.FindAsync(id);
             if (movie == null)
             {
                 return NotFound();
@@ -97,11 +85,9 @@ namespace ASPCoreApplication2023.Controllers
         }
 
         // POST: Movies/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,DateAdded")] Movie movie)
+        public async Task<IActionResult> Edit(int id, Movie movie)
         {
             if (id != movie.Id)
             {
@@ -110,49 +96,18 @@ namespace ASPCoreApplication2023.Controllers
 
             if (ModelState.IsValid)
             {
-                if (movie.ImageFile != null && movie.ImageFile.Length > 0)
-                {
-                    // Enregistrez le fichier image sur le serveur
-                    var imagePath = Path.Combine("wwwroot/images", movie.ImageFile.FileName);
-                    using (var stream = new FileStream(imagePath, FileMode.Create))
-                    {
-                        movie.ImageFile.CopyTo(stream);
-                    }
+                _movieService.Edit(movie);
 
-                    // Enregistrez le chemin de l'image dans la base de données
-                    movie.Photo = $"/images/{movie.ImageFile.FileName}";
-                }
-                try
-                {
-                    _context.Update(movie);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!MovieExists(movie.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
                 return RedirectToAction(nameof(Index));
             }
             return View(movie);
         }
 
         // GET: Movies/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null || _context.Movies == null)
-            {
-                return NotFound();
-            }
+            var movie = _movieService.GetMovieById(id);
 
-            var movie = await _context.Movies
-                .FirstOrDefaultAsync(m => m.Id == id);
             if (movie == null)
             {
                 return NotFound();
@@ -171,29 +126,31 @@ namespace ASPCoreApplication2023.Controllers
                 return Problem("Entity set 'AppdbContext.Movies'  is null.");
             }
 
-            var movie = await _context.Movies.FindAsync(id);
-            if (movie != null)
-            {
-                _context.Movies.Remove(movie);
-            }
-            // Delete the image file from the /images folder
-            if (!string.IsNullOrEmpty(movie.Photo))
-            {
-                var imagePath = Path.Combine("wwwroot", movie.Photo.TrimStart('/'));
-
-                if (System.IO.File.Exists(imagePath))
-                {
-                    System.IO.File.Delete(imagePath);
-                }
-            }
-
-            await _context.SaveChangesAsync();
+            _movieService.Delete(id);
             return RedirectToAction(nameof(Index));
         }
 
         private bool MovieExists(int id)
         {
           return (_context.Movies?.Any(e => e.Id == id)).GetValueOrDefault();
+        }
+
+        public IActionResult MoviesByGenre(int id)
+        {
+            var movies = _movieService.GetMoviesByGenre(id);
+            return View("index", movies);
+        }
+
+        public IActionResult MoviesOrderedAscending()
+        {
+            var movies = _movieService.GetAllMoviesOrderedAscending();
+            return View("index", movies);
+        }
+
+        public IActionResult MoviesByUserDefinedGenre(string name)
+        {
+            var movies = _movieService.GetMoviesByUserDefinedGenre(name);
+            return View("index", movies);
         }
     }
 }
