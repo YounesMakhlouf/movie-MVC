@@ -14,13 +14,11 @@ namespace ASPCoreApplication2023.Controllers
 {
     public class MoviesController : Controller
     {
-        private readonly AppdbContext _context;
         private readonly IMovieService _movieService;
 
 
-        public MoviesController(AppdbContext context,IMovieService movieService)
+        public MoviesController(IMovieService movieService)
         {
-            _context = context;
             _movieService = movieService;
         }
 
@@ -36,11 +34,6 @@ namespace ASPCoreApplication2023.Controllers
         // GET: Movies/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Movies == null)
-            {
-                return NotFound();
-            }
-
             var movie = _movieService.GetMovieById(id.Value);
 
             if (movie == null)
@@ -121,18 +114,8 @@ namespace ASPCoreApplication2023.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Movies == null)
-            {
-                return Problem("Entity set 'AppdbContext.Movies'  is null.");
-            }
-
             _movieService.Delete(id);
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool MovieExists(int id)
-        {
-          return (_context.Movies?.Any(e => e.Id == id)).GetValueOrDefault();
         }
 
         public IActionResult MoviesByGenre(int id)
