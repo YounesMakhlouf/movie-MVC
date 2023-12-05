@@ -1,5 +1,6 @@
 using ASPCoreApplication2023.Data;
 using ASPCoreApplication2023.Repositories;
+using ASPCoreApplication2023.Repositories.Interfaces;
 using ASPCoreApplication2023.Services.ServiceContracts;
 using ASPCoreApplication2023.Services.Services;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppdbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<MovieRepository, MovieRepository>();
+builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 builder.Services.AddScoped<IMovieService, MovieService>();
 
 var app = builder.Build();

@@ -1,10 +1,11 @@
 ﻿using ASPCoreApplication2023.Data;
 using ASPCoreApplication2023.Models;
+using ASPCoreApplication2023.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace ASPCoreApplication2023.Repositories
 {
-    public class MovieRepository
+    public class MovieRepository : IMovieRepository
     {
         private readonly AppdbContext _db;
 
@@ -13,33 +14,33 @@ namespace ASPCoreApplication2023.Repositories
             _db = db;
         }
 
-        public List<Movie> GetAllMovies()
+        public async Task<List<Movie>> GetAllMovies()
         {
-            return _db.Movies.ToList();
+            return await _db.Movies.ToListAsync();
         }
 
-        public Movie GetMovieById(int id)
+        public async Task<Movie> GetMovieById(int id)
         {
-            return _db.Movies.Find(id);
+            return await _db.Movies.FindAsync(id);
         }
 
-        public void CreateMovie(Movie movie)
+        public async Task CreateMovie(Movie movie)
         {
             HandleImageUpload(movie);
-            _db.Movies.Add(movie);
-            _db.SaveChanges();
+            await _db.Movies.AddAsync(movie);
+            await _db.SaveChangesAsync();
         }
 
-        public void EditMovie(Movie movie)
+        public async Task EditMovie(Movie movie)
         {
             HandleImageUpload(movie);
-            _db.Entry(movie).State = EntityState.Modified;
-            _db.SaveChanges();
+            _db.Update(movie);
+            await _db.SaveChangesAsync();
         }
 
-        public void DeleteMovie(int id)
+        public async Task DeleteMovie(int id)
         {
-            var movie = GetMovieById(id);
+            var movie = await GetMovieById(id);
 
             if (movie != null)
             {
@@ -55,43 +56,43 @@ namespace ASPCoreApplication2023.Repositories
                         System.IO.File.Delete(imagePath);
                     }
                 }
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
             }
         }
 
-        public List<Movie> GetMoviesByGenre(int genreId)
+        public async Task<List<Movie>> GetMoviesByGenre(int genreId)
         {
-            return _db.Movies
+            return await _db.Movies
                 .Where(m => m.Genre.Id == genreId)
-                .ToList();
+                .ToListAsync();
         }
 
-        public List<Movie> GetAllMoviesOrderedAscending()
+        public async Task<List<Movie>> GetAllMoviesOrderedAscending()
         {
-            return _db.Movies
+            return await _db.Movies
                 .OrderBy(m => m.Name)
-                .ToList();
+                .ToListAsync();
         }
 
-        public List<Movie> GetMoviesByUserDefinedGenre(string userDefinedGenre)
+        public async Task<List<Movie>> GetMoviesByUserDefinedGenre(string userDefinedGenre)
         {
-            return _db.Movies
+            return await _db.Movies
                 .Where(m => m.Genre.GenreName == userDefinedGenre)
-                .ToList();
+                .ToListAsync();
         }
 
         private static void HandleImageUpload(Movie movie)
-        {
-            if (movie.ImageFile != null && movie.ImageFile.Length > 0)
             {
-                var imagePath = Path.Combine("wwwroot/images", movie.ImageFile.FileName);
-                using (var stream = new FileStream(imagePath, FileMode.Create))
+                if (movie.ImageFile != null && movie.ImageFile.Length > 0)
                 {
-                    movie.ImageFile.CopyTo(stream);
-                }
+                    var imagePath = Path.Combine("wwwroot/images", movie.ImageFile.FileName);
+                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    {
+                        movie.ImageFile.CopyTo(stream);
+                    }
 
-                movie.Photo = $"/images/{movie.ImageFile.FileName}";
+                    movie.Photo = $"/images/{movie.ImageFile.FileName}";
+                }
             }
         }
-    }
 }

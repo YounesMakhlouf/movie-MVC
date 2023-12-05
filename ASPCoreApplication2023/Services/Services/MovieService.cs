@@ -1,5 +1,6 @@
 ﻿using ASPCoreApplication2023.Models;
 using ASPCoreApplication2023.Repositories;
+using ASPCoreApplication2023.Repositories.Interfaces;
 using ASPCoreApplication2023.Services.ServiceContracts;
 using static ASPCoreApplication2023.Services.Services.MovieService;
 
@@ -7,49 +8,49 @@ namespace ASPCoreApplication2023.Services.Services
 {
         public class MovieService : IMovieService
         {
-            private readonly MovieRepository _movieRepository;
+            private readonly IMovieRepository _movieRepository;
 
-            public MovieService(MovieRepository movieRepository)
+            public MovieService(IMovieRepository movieRepository)
             {
                 _movieRepository = movieRepository;
             }
 
-            public List<Movie> GetAllMovies()
+            public Task<List<Movie>> GetAllMovies()
             {
                 return _movieRepository.GetAllMovies();
             }
 
-            public Movie GetMovieById(int id)
+            public Task<Movie> GetMovieById(int id)
             {
                 return _movieRepository.GetMovieById(id);
             }
 
-            public void CreateMovie(Movie movie)
+            public Task CreateMovie(Movie movie)
             {
-                _movieRepository.CreateMovie(movie);
+                return _movieRepository.CreateMovie(movie);
             }
 
-            public void Edit(Movie movie)
+            public Task Edit(Movie movie)
             {
-                _movieRepository.EditMovie(movie);
+                return _movieRepository.EditMovie(movie);
             }
 
-            public void Delete(int id)
+            public Task Delete(int id)
             {
-                _movieRepository.DeleteMovie(id);
+                return _movieRepository.DeleteMovie(id);
             }
 
-            public List<Movie> GetMoviesByGenre(int genreId)
+            public Task<List<Movie>> GetMoviesByGenre(int genreId)
             {
                 return _movieRepository.GetMoviesByGenre(genreId);
             }
 
-            public List<Movie> GetAllMoviesOrderedAscending()
+            public Task<List<Movie>> GetAllMoviesOrderedAscending()
             {
                 return _movieRepository.GetAllMoviesOrderedAscending();
             }
 
-            public List<Movie> GetMoviesByUserDefinedGenre(string userDefinedGenre)
+            public Task<List<Movie>> GetMoviesByUserDefinedGenre(string userDefinedGenre)
             {
                 return _movieRepository.GetMoviesByUserDefinedGenre(userDefinedGenre);
             }

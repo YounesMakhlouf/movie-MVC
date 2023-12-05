@@ -16,7 +16,6 @@ namespace ASPCoreApplication2023.Controllers
     {
         private readonly IMovieService _movieService;
 
-
         public MoviesController(IMovieService movieService)
         {
             _movieService = movieService;
@@ -25,7 +24,7 @@ namespace ASPCoreApplication2023.Controllers
         // GET: Movies
         public async Task<IActionResult> Index()
         {
-             var movies = _movieService.GetAllMovies();
+             var movies = await _movieService.GetAllMovies();
               return movies != null ? 
                           View(movies) :
                           Problem("Entity set 'AppdbContext.Movies'  is null.");
@@ -34,7 +33,7 @@ namespace ASPCoreApplication2023.Controllers
         // GET: Movies/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            var movie = _movieService.GetMovieById(id.Value);
+            var movie = await _movieService.GetMovieById(id.Value);
 
             if (movie == null)
             {
@@ -68,7 +67,7 @@ namespace ASPCoreApplication2023.Controllers
         // GET: Movies/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            var movie = _movieService.GetMovieById(id);
+            var movie = await _movieService.GetMovieById(id);
 
             if (movie == null)
             {
@@ -89,7 +88,7 @@ namespace ASPCoreApplication2023.Controllers
 
             if (ModelState.IsValid)
             {
-                _movieService.Edit(movie);
+                await _movieService.Edit(movie);
 
                 return RedirectToAction(nameof(Index));
             }
@@ -99,7 +98,7 @@ namespace ASPCoreApplication2023.Controllers
         // GET: Movies/Delete/5
         public async Task<IActionResult> Delete(int id)
         {
-            var movie = _movieService.GetMovieById(id);
+            var movie = await _movieService.GetMovieById(id);
 
             if (movie == null)
             {
@@ -114,7 +113,7 @@ namespace ASPCoreApplication2023.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            _movieService.Delete(id);
+            await _movieService.Delete(id);
             return RedirectToAction(nameof(Index));
         }
 
